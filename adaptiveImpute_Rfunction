@@ -39,8 +39,10 @@ adaptImpute = function(M.p,r,sparse=NULL,
    return(temp.M)
 }
 
-# Below, subfunctions for adaptiveImpute
-M.hat.FR=function(lambda.hat,u.hat,v.hat,r,ind){
+############################################
+## Below, subfunctions for adaptiveImpute ##
+
+M.hat.FR=function(M.p,lambda.hat,u.hat,v.hat,r,ind){
 nz=which(ind)
 X = matrix(0,length(nz),r)
 for(i in 1:r){
@@ -65,7 +67,7 @@ tau = (sum(diag(SIG))-sum(obj$d))/(d-r)
 lambda.hat=sqrt(obj$d-tau)
 v.hat=obj$v
 u.hat=obj2$v
-M.hat=M.hat.FR(lambda.hat,u.hat,v.hat,r,ind)
+M.hat=M.hat.FR(M.p,lambda.hat,u.hat,v.hat,r,ind)
 return(M.hat) 
 }
 
