@@ -1,0 +1,82 @@
+require(rARPACK)
+require(Matrix)
+
+adaptImpute = function(M.p,r,sparse=NULL,
+				min.value=NULL,max.value=NULL,
+				tol=1e-07,itmax=500){
+    
+    # (1) M.p is a n-by-d partially-observed matrix where
+    #	 the unobserved entries are filled with zeros and d < n.
+    # (2) If M.p is a sparse matrix, set sparse="yes".
+    # (3) min.value and max.value are the minimum and maximum values that
+    #	 the entries of M.p can have.
+    # (4) tol is a convergence threshold, measured as the relative change in 
+    #	 the Frobenius norm between two successive estimates.
+    # (5) itmax is the maximum number of iterations.
+    
+    n = nrow(M.p); d = ncol(M.p)
+    ind = !(M.p==0)
+    p.hat = mean(ind)
+    if(!is.null(sparse)|p.hat<0.5) M.p = Matrix(M.p, sparse = TRUE)
+    
+    temp.M=Initial.FR(M.p, r, p.hat,d,ind)
+    maxInAbs = max(abs(M.p))
+    ifelse(is.null(max.value), max.value<-maxInAbs, temp.M[temp.M>max.value]<-max.value)
+    ifelse(is.null(min.value), min.value<- -maxInAbs, temp.M[temp.M<min.value]<-min.value)
+    
+    itr=0; error=Inf
+    while(error>tol){
+     M = temp.M*(1-ind)+M.p
+     temp=SVD.F(M,r, M.p,d) 
+     temp.M1=temp
+     error=sum((temp.M1-temp.M)^2)/sum(temp.M^2)	
+     temp.M=temp.M1
+     temp.M[temp.M>max.value]=max.value
+     temp.M[temp.M<min.value] = min.value
+     itr=itr+1
+     if(itr>itmax){break}
+    }
+   return(temp.M)
+}
+
+# Below, subfunctions for adaptiveImpute
+M.hat.FR=function(lambda.hat,u.hat,v.hat,r,ind){
+nz=which(ind)
+X = matrix(0,length(nz),r)
+for(i in 1:r){
+	E = lambda.hat[i]*u.hat[,i] %*% t(v.hat[,i])
+	X[,i] = E[nz]
+}
+y=M.p[nz]
+coef = lm(y~X-1)$coef
+lambda.hat.R = diag(lambda.hat*coef)
+out = u.hat %*% lambda.hat.R %*% t(v.hat)
+return(out)
+}
+
+Initial.FR=function(M.p,r,p.hat,d,ind){
+M.pTM.p = t(M.p)%*%M.p
+SIG=(M.pTM.p+(p.hat-1)* diag(diag(M.pTM.p)))/p.hat^2
+M.pM.pT = M.p %*%t(M.p)
+SIG2=(M.pM.pT+(p.hat-1)* diag(diag(M.pM.pT)))/p.hat^2
+obj=svds(SIG,r)
+obj2=svds(SIG2,r)
+tau = (sum(diag(SIG))-sum(obj$d))/(d-r)
+lambda.hat=sqrt(obj$d-tau)
+v.hat=obj$v
+u.hat=obj2$v
+M.hat=M.hat.FR(lambda.hat,u.hat,v.hat,r,ind)
+return(M.hat) 
+}
+
+SVD.F=function(M,r,M.p,d){
+obj=svds(M,r)
+M2 = M^2
+MTM = colSums(M2)
+tau = (sum(MTM) - sum(obj$d^2))/(d-r)
+lambda.hat=sqrt(obj$d^2 - tau)
+v.hat=obj$v
+u.hat=obj$u 
+M.hat= u.hat %*%diag(lambda.hat)%*% t(v.hat) 
+return(M.hat)
+}
