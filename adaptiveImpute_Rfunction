@@ -98,16 +98,7 @@ adaptImpute = function(M.p,r=NULL,sparse=c(TRUE,FALSE),
 				sign.choice = c("asympt","lm","greedy"),
 				min.value=NULL,max.value=NULL,
 				tol=1e-07,itmax=200){
-    
-    # (1) M.p is a n-by-d partially-observed matrix where
-    #	 the unobserved entries are filled with zeros and n > d.
-    # (2) If M.p is a sparse matrix, set sparse="yes".
-    # (3) min.value and max.value are the minimum and maximum values that
-    #	 the entries of M.p can have.
-    # (4) tol is a convergence threshold, measured as the relative change in 
-    #	 the Frobenius norm between two successive estimates.
-    # (5) itmax is the maximum number of iterations.
-    
+
     n = nrow(M.p); d = ncol(M.p)
     ind = !(M.p==0)
     if(is.null(r)){
