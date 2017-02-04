@@ -9,7 +9,7 @@ Description:
 An iterative matrix completion algorithm based on the thresholded SVD. It differentially and adaptively penalizes the singular values in each iteration. Although Adaptive-Impute employs multiple thresholding parameters updated every iteration, there is no tuning problem since it automatically finds specific values of the thresholding parameters which are theoretically-justified and data-dependent. For more details, please see “Intelligent Initialization and Adaptive Thresholding for Iterative Matrix Completion; Some Statistical and Algorithmic Theory for Adaptive-Impute”.
 
 Usage:
-adaptImpute(M.p, r=NULL, sparse=c(TRUE,FALSE), sign.choice = c("asympt","lm","greedy"),
+adi(M.p, r=NULL, fast = TRUE, sparse=c(TRUE,FALSE), sign.choice = c("asympt","lm","greedy"),
 		min.value=NULL, max.value=NULL, tol=1e-07,itmax=200)
 
 Arguments:
@@ -19,12 +19,15 @@ M.p		        input matrix where the unobserved matrix are marked as zeros. Can b
 r        		  rank of the resulting matrix. If no value is given, it automatically chooses one 
               with the biggest eigengap based on a scree plot.
 
+fast          TRUE calls fastAdi, which runs faster when entries are sparsely observed. fastAdi
+              does not use the min.value and max.value which often reduces statistical performance.
+              
 sparse		    TRUE if only a few entries are observed and FALSE otherwise
 
 sign.choice	  we recommend to use “asympt”. It uses asymptotically consistent signs when
               combining the estimates of singular values and singular vectors to obtain the
               estimates of the low-rank matrix. “lm” uses linear regression and “greedy” uses
-              greedy search. 
+              greedy search. fastAdi uses a slightly different initializer.
   
 min.value	    a constant. lower bound for the entries
 
@@ -33,6 +36,14 @@ max.value	    a constant. upper bound for the entries
 tol		        tolerance for convergence 
 
 itmax		      maximum number of iterations
+
+
+Values:
+Mhat          adi with fast=FALSE returns a dense matrix with the same dimensions as M.p.
+
+s             adi with fast=TRUE returns a list s with s$u, s$v, and s$d matching the structure of 
+              svds(M.p,r)
+
 
 Examples:
 n = 500
@@ -50,4 +61,8 @@ p = 0.1
 y = matrix(rbinom(n*d,1,p),n,d)
 dat = Mf*y
 
-out = adaptImpute(M.p=dat,r=r)
+LowRankOut = adi(M.p=dat,r=r)
+str(LowRankOut)
+
+DenseOut = adi(M.p=dat,r=r, fast =F)
+str(DenseOut)
