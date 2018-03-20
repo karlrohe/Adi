@@ -293,7 +293,7 @@ fastInitial=function(M.p,r){
 # threshSVD is the key internal function for fastAdi
 #####################
 
-threshSVD= function(so, M.p, frobMp){
+threshSVD= function(so, M.p, frobMp, r){
   
   # uses sparse+lowrank svd
   # computes thresholding parameters
@@ -326,7 +326,7 @@ fastAdi = function(M.p,r,tol=1e-07,itmax=200){
   
   while(error> tol){
     oldResids = resids
-    s=threshSVD(s,M.p,frobMp) 
+    s=threshSVD(s,M.p,frobMp, r) 
     resids = graphMult(s$u,s$v%*%diag(s$d),M.p, resids = T)@x
     print(sd(resids))
     error=sum((oldResids-resids)^2)/sum(resids^2)
@@ -336,4 +336,16 @@ fastAdi = function(M.p,r,tol=1e-07,itmax=200){
     if(itr>itmax){break}
   }
   return(s)
+}
+
+
+
+impute = function(fit, elements){
+  # fit should be svd object (u,v,d) e.g. returned from fastAdi
+  # elements should be two column matrix of elements i,j to impute.
+  
+  u = fit$u%*%diag(fit$d)
+  uind = u[elements[,1], ]
+  vind = fit$v[elements[,2],]
+  return(rowSums(uind*vind))
 }
